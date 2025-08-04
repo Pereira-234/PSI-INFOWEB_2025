@@ -1,6 +1,11 @@
 #from loja.loja.models import PERFIL
 from loja.models import *
 
+PERFIL = (
+    (1, 'Admin'),
+    (2, 'Usuario')
+)
+
 class Usuario(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     perfil = models.IntegerField(choices=PERFIL, default=2)

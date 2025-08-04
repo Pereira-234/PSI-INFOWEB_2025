@@ -4,17 +4,6 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from django.core.files.storage import FileSystemStorage
 
-def edit_produto_view(request, id=None):
-    produtos = Produto.objects.all()
-    if id is not None:
-        produtos = produtos.filter(id=id)
-    produto = produtos.first()
-    print(produto)
-    Fabricantes = Fabricante.objects.all()
-    Categorias = Categoria.objects.all()
-    context = { 'produto': produto, 'fabricantes' : Fabricantes, 'categorias' : Categorias}
-    return render(request, template_name='produto/produto-edit.html', context=context, status=200)
-
 def list_produto_view(request, id=None):
     produto = request.GET.get("produto")
     destaque = request.GET.get("destaque")
@@ -44,6 +33,18 @@ def list_produto_view(request, id=None):
         id = 0
     context = {'produtos': produtos}
     return render(request, template_name='produto/produto.html', context=context, status=200)
+
+def edit_produto_view(request, id=None):
+    produtos = Produto.objects.all()
+    if id is not None:
+        produtos = produtos.filter(id=id)
+    produto = produtos.first()
+    print(produto)
+    Fabricantes = Fabricante.objects.all()
+    Categorias = Categoria.objects.all()
+    context = { 'produto': produto, 'fabricantes' : Fabricantes, 'categorias' : Categorias}
+    return render(request, template_name='produto/produto-edit.html', context=context, status=200)
+
 
 # adicione a função que trata o postback da interface de edição
 def edit_produto_postback(request, id=None):
@@ -95,7 +96,9 @@ def delete_produto_view(request, id=None):
         produtos = produtos.filter(id=id)
     produto = produtos.first()
     print(produto)
-    context = {'produto': produto}
+    Fabricantes = Fabricante.objects.all()
+    Categorias = Categoria.objects.all()
+    context = { 'produto': produto, 'fabricantes' : Fabricantes, 'categorias' : Categorias}
     return render(request, template_name='produto/produto-delete.html', context=context, status=200)
 
 # adicione a função que trata o postback da interface de exclusão
@@ -105,10 +108,14 @@ def delete_produto_postback(request, id=None):
         # Salva dados editados
         id = request.POST.get("id")
         produto = request.POST.get("Produto")
+        categoria = request.POST.get("CategoriaFk")
+        fabricante = request.POST.get("FabricanteFk")
         print("postback-delete")
         print(id)
         try:
-            Produto.objects.filter(id=id).delete()
+            obj_produto = Produto.objects.filter(id=id).delete()
+            obj_produto.fabricante = Fabricante.objects.filter(id=fabricante).first()
+            obj_produto.categoria = Categoria.objects.filter(id=categoria).first()
             print("Produto %s excluido com sucesso" % produto)
         except Exception as e:
             print("Erro salvando edição de produto: %s" % e)
@@ -124,6 +131,8 @@ def create_produto_view(request, id=None):
         msgPromocao = request.POST.get("msgPromocao")
         preco = request.POST.get("preco")
         image = request.POST.get("image")
+        categoria = request.POST.get("CategoriaFk")
+        fabricante = request.POST.get("FabricanteFk")
         print("postback-create")
         print(produto)
         print(destaque)
@@ -131,11 +140,14 @@ def create_produto_view(request, id=None):
         print(msgPromocao)
         print(preco)
         print(image)
+        print(categoria)
+        print(fabricante)
         try:
             obj_produto = Produto()
             obj_produto.Produto = produto
             obj_produto.destaque = (destaque is not None)
             obj_produto.promocao = (promocao is not None)
+            
             if msgPromocao is not None:
                 obj_produto.msgPromocao = msgPromocao
             obj_produto.preco = 0
@@ -153,9 +165,21 @@ def create_produto_view(request, id=None):
                     filename = fs.save(imagefile.name, imagefile)
                     if (filename is not None) and (filename != ""):
                         obj_produto.image = filename
+            if categoria and categoria != '-1':
+                obj_produto.categoria = Categoria.objects.filter(id=categoria).first()
+            else:
+                 obj_produto.categoria = None
+            if fabricante and fabricante != '-1':
+                obj_produto.fabricante = Fabricante.objects.filter(id=fabricante).first()
+            else:
+                 obj_produto.fabricante = None
+            
             obj_produto.save()
             print("Produto %s salvo com sucesso" % produto)
         except Exception as e:
             print("Erro inserindo produto: %s" % e)
         return redirect("/produto")
-    return render(request, template_name='produto/produto-create.html',status=200)   
+    Fabricantes = Fabricante.objects.all()
+    Categorias = Categoria.objects.all()
+    context = { 'fabricantes' : Fabricantes, 'categorias' : Categorias}
+    return render(request, template_name='produto/produto-create.html',context = context, status=200)   
