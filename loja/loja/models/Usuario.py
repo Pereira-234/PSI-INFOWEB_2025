@@ -22,10 +22,10 @@ class Usuario(models.Model):
                 Usuario.objects.create(user=instance)
         except:
             pass
-    @receiver(post_save, sender=User)
-    def save_user_usuario(sender, instance, **kwargs):
-            try:
-                instance.usuario.save()
-            except:
-                pass
+        @receiver(post_save, sender=User)
+        def save_user_usuario(sender, instance, **kwargs):
+                try:
+                    instance.usuario.save()
+                except:
+                    pass
 
